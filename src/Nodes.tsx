@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type InputProps<T> = {
   value: T;
@@ -62,6 +62,7 @@ const KindInput = ({
   graph: Graph;
 }) => {
   const onKindChange = (newKind: Node["kind"]) => {
+    value.kind = newKind;
     value.native.disconnect();
     if (newKind === "GainNode") {
       value.native = new GainNode(ac);
@@ -145,6 +146,84 @@ const ConnexionsInput = ({
   );
 };
 
+const NumberInput = ({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (newValue: number) => any;
+  min?: number;
+  max?: number;
+}) => {
+  const [str, setStr] = useState(`${value}`);
+  useEffect(() => {
+    setStr(`${value}`);
+  }, [value]);
+  return (
+    <input
+      type="number"
+      value={str}
+      min={min}
+      max={max}
+      onChange={(evt) => {
+        const newStr = evt.target.value;
+        setStr(newStr);
+        const newValue = parseFloat(newStr);
+        if (!isNaN(newValue)) onChange(newValue);
+      }}
+    />
+  );
+};
+
+const MinMaxInput = ({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (newValue: number) => any;
+  min: number;
+  max: number;
+}) => {
+  const [localMin, setLocalMin] = useState(min);
+  const [localMax, setLocalMax] = useState(max);
+
+  return (
+    <div>
+      <span>{min}</span>
+      <NumberInput
+        value={localMin}
+        onChange={setLocalMin}
+        min={min}
+        max={localMax}
+      />
+      <input
+        type="range"
+        value={value}
+        onChange={(evt) => onChange(parseFloat(evt.target.value))}
+        min={localMin}
+        max={localMax}
+      />
+      <NumberInput
+        value={value}
+        onChange={onChange}
+        min={localMin}
+        max={localMax}
+      />
+      <span>{max}</span>
+      <NumberInput
+        value={localMax}
+        onChange={setLocalMax}
+        min={localMin}
+        max={max}
+      />
+    </div>
+  );
+};
+
 const NodeInput = ({
   value,
   onChange,
@@ -157,6 +236,41 @@ const NodeInput = ({
   return (
     <div>
       <KindInput value={value} onChange={onChange} ac={ac} graph={graph} />
+      {value.kind === "GainNode" && (
+        <div>
+          <MinMaxInput
+            value={value.gain}
+            onChange={(newParamValue) => {
+              value.native.gain.value = newParamValue;
+              onChange({ ...value, gain: newParamValue });
+            }}
+            min={value.native.gain.minValue}
+            max={value.native.gain.maxValue}
+          />
+        </div>
+      )}
+      {value.kind === "OscillatorNode" && (
+        <div>
+          <TextSelectInput
+            value={value.type}
+            onChange={(newParamValue) => {
+              value.native.type = newParamValue;
+              value.type = newParamValue;
+              onChange({ ...value, type: newParamValue });
+            }}
+            options={["custom", "sawtooth", "sine", "square", "triangle"]}
+          />
+          <MinMaxInput
+            value={value.frequency}
+            onChange={(newParamValue) => {
+              value.native.frequency.value = newParamValue;
+              onChange({ ...value, frequency: newParamValue });
+            }}
+            min={value.native.frequency.minValue}
+            max={value.native.frequency.maxValue}
+          />
+        </div>
+      )}
       <ConnexionsInput
         value={value}
         onChange={onChange}
