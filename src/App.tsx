@@ -1,16 +1,37 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-type Instrument = {};
+let used = false;
+const useOnce = (cb: () => any) => {
+  if (used) return;
+  used = true;
+  cb();
+};
+
+type Instrument = { kind: "kick" };
+
+const KickController = () => {
+  return <></>;
+};
+
+const InstrumentController = ({ instrument }: { instrument: Instrument }) => {
+  const Controller = { kick: KickController }[instrument.kind];
+  return <Controller />;
+};
 
 export default () => {
-  const [instruments, setInstrument] = useState<{ [name: string]: Instrument }>(
-    {}
-  );
+  const [instruments, setInstruments] = useState<{
+    [name: string]: Instrument;
+  }>({});
   const [newInstrumentName, setNewInstrumentName] = useState("");
   const [sheet, setSheet] = useState<{
     [name: string]: { instrumentName: string };
   }>({});
   const [newSheetName, setNewSheetName] = useState("");
+
+  useOnce(() => {
+    console.log("addig");
+    setInstruments({ myKick: { kind: "kick" } });
+  });
 
   return (
     <>
@@ -22,12 +43,12 @@ export default () => {
             <button
               onClick={() => {
                 delete instruments[name];
-                setInstrument({ ...instruments });
+                setInstruments({ ...instruments });
               }}
             >
               x
             </button>
-            <pre>{JSON.stringify(instrument)}</pre>{" "}
+            <InstrumentController instrument={instrument} />
           </li>
         ))}
       </ul>
@@ -38,7 +59,10 @@ export default () => {
       <button
         disabled={newInstrumentName in instruments}
         onClick={() => {
-          setInstrument({ ...instruments, [newInstrumentName]: {} });
+          setInstruments({
+            ...instruments,
+            [newInstrumentName]: { kind: "kick" },
+          });
           setNewInstrumentName("");
         }}
       >
