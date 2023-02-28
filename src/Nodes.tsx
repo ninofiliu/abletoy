@@ -26,6 +26,13 @@ type Node = {
       native: GainNode;
       gain: GainNode["gain"]["value"];
     }
+  | {
+      kind: "BiquadFilterNode";
+      native: BiquadFilterNode;
+      type: BiquadFilterNode["type"];
+      frequency: BiquadFilterNode["frequency"]["value"];
+      gain: BiquadFilterNode["gain"]["value"];
+    }
 );
 
 type Graph = {
@@ -142,6 +149,9 @@ const KindInput = ({
   const onKindChange = (newKind: Node["kind"]) => {
     value.kind = newKind;
     value.native.disconnect();
+    if (newKind === "BiquadFilterNode") {
+      value.native = new BiquadFilterNode(ac);
+    }
     if (newKind === "GainNode") {
       value.native = new GainNode(ac);
     }
@@ -162,7 +172,7 @@ const KindInput = ({
     <TextSelectInput
       value={value.kind}
       onChange={onKindChange}
-      options={["GainNode", "OscillatorNode"]}
+      options={["BiquadFilterNode", "GainNode", "OscillatorNode"]}
     />
   );
 };
@@ -236,6 +246,46 @@ const NodeInput = ({
   return (
     <div>
       <KindInput value={value} onChange={onChange} ac={ac} graph={graph} />
+      {value.kind === "BiquadFilterNode" && (
+        <div>
+          <TextSelectInput
+            value={value.type}
+            onChange={(newParamValue) => {
+              value.native.type = newParamValue;
+              value.type = newParamValue;
+              onChange({ ...value, type: newParamValue });
+            }}
+            options={[
+              "allpass",
+              "bandpass",
+              "highpass",
+              "highshelf",
+              "lowpass",
+              "lowshelf",
+              "notch",
+              "peaking",
+            ]}
+          />
+          <MinMaxInput
+            value={value.frequency}
+            onChange={(newParamValue) => {
+              value.native.frequency.value = newParamValue;
+              onChange({ ...value, frequency: newParamValue });
+            }}
+            min={value.native.frequency.minValue}
+            max={value.native.frequency.maxValue}
+          />
+          <MinMaxInput
+            value={value.gain}
+            onChange={(newParamValue) => {
+              value.native.gain.value = newParamValue;
+              onChange({ ...value, gain: newParamValue });
+            }}
+            min={value.native.gain.minValue}
+            max={value.native.gain.maxValue}
+          />
+        </div>
+      )}
       {value.kind === "GainNode" && (
         <div>
           <MinMaxInput
