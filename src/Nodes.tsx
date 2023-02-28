@@ -1,156 +1,98 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-const SelectInput = <T extends string>({
-  value,
-  onChange,
-  options,
-}: {
+type InputProps<T> = {
   value: T;
   onChange: (newValue: T) => any;
-  options: T[];
-}) => {
+};
+
+type Connexion =
+  | { kind: "ctx" }
+  | { kind: "node"; nodeName: string }
+  | { kind: "param"; nodeName: string; paramName: string };
+
+type AppNode = {
+  connexions: Connexion[];
+} & (
+  | {
+      kind: "OscillatorNode";
+      node: OscillatorNode;
+      type: OscillatorNode["type"];
+      frequency: OscillatorNode["frequency"]["value"];
+    }
+  | {
+      kind: "GainNode";
+      node: GainNode;
+      gain: GainNode["gain"]["value"];
+    }
+);
+
+type Graph = {
+  [nodeName: string]: AppNode;
+};
+
+const NodeController = ({ appNode }: { appNode: AppNode }) => {
+  return <>TODO</>;
+};
+
+const GraphController = ({ ac }: { ac: AudioContext }) => {
+  const [graph, setGraph] = useState<Graph>({});
+
+  const [newNodeName, setNewNodeName] = useState("");
+
   return (
-    <select value={value} onChange={(evt) => onChange(evt.target.value as T)}>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
+    <ul>
+      {Object.entries(graph).map(([nodeName, appNode]) => (
+        <li key={nodeName}>
+          <h2>{nodeName}</h2>
+          <NodeController appNode={appNode} />
+        </li>
       ))}
-    </select>
-  );
-};
-
-const NumberInput = ({
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  value: number;
-  onChange: (newValue: number) => any;
-  min?: number;
-  max?: number;
-}) => {
-  const [str, setStr] = useState(`${value}`);
-  useEffect(() => {
-    setStr(`${value}`);
-  }, [value]);
-  return (
-    <input
-      style={{ width: "10ch" }}
-      type="number"
-      value={str}
-      min={min}
-      max={max}
-      onChange={(evt) => {
-        const newStr = evt.target.value;
-        setStr(newStr);
-        const newValue = parseFloat(newStr);
-        if (!isNaN(newValue)) onChange(newValue);
-      }}
-    />
-  );
-};
-
-const MinMaxInput = ({
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  value: number;
-  onChange: (newValue: number) => any;
-  min: number;
-  max: number;
-}) => {
-  const [localMin, setLocalMin] = useState(min);
-  const [localMax, setLocalMax] = useState(max);
-
-  return (
-    <div>
-      <span>{min}</span>
-      <NumberInput
-        value={localMin}
-        onChange={setLocalMin}
-        min={min}
-        max={localMax}
-      />
-      <input
-        type="range"
-        value={value}
-        onChange={(evt) => onChange(parseFloat(evt.target.value))}
-        min={localMin}
-        max={localMax}
-      />
-      <NumberInput
-        value={value}
-        onChange={onChange}
-        min={localMin}
-        max={localMax}
-      />
-      <span>{max}</span>
-      <NumberInput
-        value={localMax}
-        onChange={setLocalMax}
-        min={localMin}
-        max={max}
-      />
-    </div>
-  );
-};
-
-const OscillatorController = ({ osc }: { osc: OscillatorNode }) => {
-  const [type, setType] = useState<OscillatorNode["type"]>(osc.type);
-  const types = [
-    "custom",
-    "sawtooth",
-    "sine",
-    "square",
-    "triangle",
-  ] as OscillatorNode["type"][];
-
-  const [frequency, setFrequency] = useState(osc.frequency.value);
-
-  return (
-    <>
-      <SelectInput
-        value={type}
-        onChange={(newType) => {
-          osc.type = newType;
-          setType(newType);
-        }}
-        options={types}
-      />
-      <MinMaxInput
-        value={frequency}
-        onChange={(newFrequency) => {
-          osc.frequency.value = newFrequency;
-          setFrequency(newFrequency);
-        }}
-        min={osc.frequency.minValue}
-        max={osc.frequency.maxValue}
-      />
-    </>
+      <li>
+        <input
+          value={newNodeName}
+          onChange={(evt) => setNewNodeName(evt.target.value)}
+        />
+        <button
+          disabled={newNodeName in graph}
+          onClick={() => {
+            const node = new OscillatorNode(ac);
+            node.start();
+            setGraph({
+              ...graph,
+              [newNodeName]: {
+                connexions: [],
+                kind: "OscillatorNode",
+                node,
+                type: node.type,
+                frequency: node.frequency.value,
+              },
+            });
+            setNewNodeName("");
+          }}
+        >
+          add sine
+        </button>
+      </li>
+    </ul>
   );
 };
 
 export default () => {
   const [state, setState] = useState<
-    { kind: "idle" } | { kind: "started"; osc: OscillatorNode }
-  >({ kind: "idle" });
+    { kind: "idle" } | { kind: "started"; ac: AudioContext }
+  >({
+    kind: "idle",
+  });
 
   const start = async () => {
     const ac = new AudioContext();
     if (ac.state !== "running") await ac.resume();
-    const osc = new OscillatorNode(ac);
-    osc.start();
-    osc.connect(ac.destination);
-    setState({ kind: "started", osc });
+    setState({ kind: "started", ac });
   };
 
   return state.kind === "idle" ? (
     <button onClick={start}>start</button>
   ) : (
-    <OscillatorController osc={state.osc} />
+    <GraphController ac={state.ac} />
   );
 };
