@@ -5,13 +5,14 @@ type InputProps<T> = {
   onChange: (newValue: T) => any;
 };
 
-type Connexion =
-  | { kind: "ctx" }
-  | { kind: "node"; nodeName: string }
-  | { kind: "param"; nodeName: string; paramName: string };
+type Connexions = {
+  ctx: boolean;
+  // nodes: { [nodeName: string]: boolean };
+  // params: { [nodeName: string]: { [paramName: string]: boolean } };
+};
 
 type AppNode = {
-  connexions: Connexion[];
+  connexions: Connexions;
 } & (
   | {
       kind: "OscillatorNode";
@@ -30,13 +31,41 @@ type Graph = {
   [nodeName: string]: AppNode;
 };
 
-const NodeController = ({ appNode }: { appNode: AppNode }) => {
-  return <>TODO</>;
+const NodeInput = ({
+  value,
+  onChange,
+  ac,
+}: InputProps<AppNode> & {
+  ac: AudioContext;
+}) => {
+  return (
+    <div>
+      <h2>Connexions</h2>
+      <ul>
+        <li>
+          <input
+            type="checkbox"
+            checked={value.connexions.ctx}
+            onChange={(evt) => {
+              if (evt.target.checked) {
+                value.node.connect(ac.destination);
+                value.connexions.ctx = true;
+              } else {
+                value.node.disconnect(ac.destination);
+                value.connexions.ctx = false;
+              }
+              onChange({ ...value });
+            }}
+          />
+          master
+        </li>
+      </ul>
+    </div>
+  );
 };
 
 const GraphController = ({ ac }: { ac: AudioContext }) => {
   const [graph, setGraph] = useState<Graph>({});
-
   const [newNodeName, setNewNodeName] = useState("");
 
   return (
@@ -44,7 +73,13 @@ const GraphController = ({ ac }: { ac: AudioContext }) => {
       {Object.entries(graph).map(([nodeName, appNode]) => (
         <li key={nodeName}>
           <h2>{nodeName}</h2>
-          <NodeController appNode={appNode} />
+          <NodeInput
+            value={appNode}
+            onChange={(newAppNode) =>
+              setGraph({ ...graph, [nodeName]: newAppNode })
+            }
+            ac={ac}
+          />
         </li>
       ))}
       <li>
@@ -60,7 +95,7 @@ const GraphController = ({ ac }: { ac: AudioContext }) => {
             setGraph({
               ...graph,
               [newNodeName]: {
-                connexions: [],
+                connexions: { ctx: false },
                 kind: "OscillatorNode",
                 node,
                 type: node.type,
