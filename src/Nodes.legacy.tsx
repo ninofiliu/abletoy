@@ -1,23 +1,3 @@
-const TextSelectInput = <T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T;
-  onChange: (newValue: T) => any;
-  options: T[];
-}) => {
-  return (
-    <select value={value} onChange={(evt) => onChange(evt.target.value as T)}>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  );
-};
-
 const ObjectSelectInput = <T,>({
   value,
   onChange,
