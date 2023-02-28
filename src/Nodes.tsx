@@ -52,6 +52,84 @@ const TextSelectInput = <T extends string>({
   );
 };
 
+const NumberInput = ({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (newValue: number) => any;
+  min?: number;
+  max?: number;
+}) => {
+  const [str, setStr] = useState(`${value}`);
+  useEffect(() => {
+    setStr(`${value}`);
+  }, [value]);
+  return (
+    <input
+      type="number"
+      value={str}
+      min={min}
+      max={max}
+      onChange={(evt) => {
+        const newStr = evt.target.value;
+        setStr(newStr);
+        const newValue = parseFloat(newStr);
+        if (!isNaN(newValue)) onChange(newValue);
+      }}
+    />
+  );
+};
+
+const MinMaxInput = ({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (newValue: number) => any;
+  min: number;
+  max: number;
+}) => {
+  const [localMin, setLocalMin] = useState(min);
+  const [localMax, setLocalMax] = useState(max);
+
+  return (
+    <div>
+      <span>{min}</span>
+      <NumberInput
+        value={localMin}
+        onChange={setLocalMin}
+        min={min}
+        max={localMax}
+      />
+      <input
+        type="range"
+        value={value}
+        onChange={(evt) => onChange(parseFloat(evt.target.value))}
+        min={localMin}
+        max={localMax}
+      />
+      <NumberInput
+        value={value}
+        onChange={onChange}
+        min={localMin}
+        max={localMax}
+      />
+      <span>{max}</span>
+      <NumberInput
+        value={localMax}
+        onChange={setLocalMax}
+        min={localMin}
+        max={max}
+      />
+    </div>
+  );
+};
+
 const KindInput = ({
   value,
   onChange,
@@ -143,84 +221,6 @@ const ConnexionsInput = ({
           </li>
         ))}
     </ul>
-  );
-};
-
-const NumberInput = ({
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  value: number;
-  onChange: (newValue: number) => any;
-  min?: number;
-  max?: number;
-}) => {
-  const [str, setStr] = useState(`${value}`);
-  useEffect(() => {
-    setStr(`${value}`);
-  }, [value]);
-  return (
-    <input
-      type="number"
-      value={str}
-      min={min}
-      max={max}
-      onChange={(evt) => {
-        const newStr = evt.target.value;
-        setStr(newStr);
-        const newValue = parseFloat(newStr);
-        if (!isNaN(newValue)) onChange(newValue);
-      }}
-    />
-  );
-};
-
-const MinMaxInput = ({
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  value: number;
-  onChange: (newValue: number) => any;
-  min: number;
-  max: number;
-}) => {
-  const [localMin, setLocalMin] = useState(min);
-  const [localMax, setLocalMax] = useState(max);
-
-  return (
-    <div>
-      <span>{min}</span>
-      <NumberInput
-        value={localMin}
-        onChange={setLocalMin}
-        min={min}
-        max={localMax}
-      />
-      <input
-        type="range"
-        value={value}
-        onChange={(evt) => onChange(parseFloat(evt.target.value))}
-        min={localMin}
-        max={localMax}
-      />
-      <NumberInput
-        value={value}
-        onChange={onChange}
-        min={localMin}
-        max={localMax}
-      />
-      <span>{max}</span>
-      <NumberInput
-        value={localMax}
-        onChange={setLocalMax}
-        min={localMin}
-        max={max}
-      />
-    </div>
   );
 };
 
