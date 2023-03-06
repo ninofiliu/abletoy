@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Nodes from "./Nodes";
+import Nodes from "./Nodes.2";
 import "./index.css";
 
 const ex = <T,>(x: T | null | undefined): T => {
