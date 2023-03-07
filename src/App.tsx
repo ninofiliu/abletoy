@@ -1,6 +1,19 @@
 import { Dispatch, SetStateAction, useState } from "react";
-import { createMap } from "./lib";
+import { createCtrl, createMap } from "./lib";
 import { Ctrl, Graph } from "./types";
+
+const defaultStates = {
+  Oscillator: {
+    kind: "Oscillator",
+    frequency: 200,
+    detune: 0,
+    type: "sawtooth",
+  },
+  Gain: {
+    kind: "Gain",
+    gain: 0.5,
+  },
+} as const;
 
 const defaultGraph: Graph = {
   nodes: {
@@ -22,6 +35,52 @@ const defaultGraph: Graph = {
     { from: "sine", to: "amp", name: "default" },
     { from: "amp", to: "master", name: "default" },
   ],
+};
+
+const NewNodeInput = ({
+  graph,
+  setGraph,
+  map,
+  ac,
+}: {
+  graph: Graph;
+  setGraph: Dispatch<SetStateAction<Graph>>;
+  map: { [nodeId: string]: Ctrl };
+  ac: AudioContext;
+}) => {
+  const [nodeId, setNodeId] = useState("");
+  const [kind, setKind] = useState<"Oscillator" | "Gain">("Oscillator");
+  return (
+    <>
+      <input
+        type="text"
+        value={nodeId}
+        onChange={(evt) => setNodeId(evt.target.value)}
+      />
+      <select
+        value={kind}
+        onChange={(evt) => {
+          // @ts-ignore
+          setKind(evt.target.value);
+        }}
+      >
+        {["Oscillator", "Gain"].map((newKind) => (
+          <option key={newKind}>{newKind}</option>
+        ))}
+      </select>
+      <button
+        onClick={() => {
+          map[nodeId] = createCtrl(ac, kind);
+          setGraph({
+            ...graph,
+            nodes: { ...graph.nodes, [nodeId]: defaultStates[kind] },
+          });
+        }}
+      >
+        add
+      </button>
+    </>
+  );
 };
 
 const MatrixInput = ({
@@ -114,10 +173,12 @@ const Matrix = ({
 export default () => {
   const [graph, setGraph] = useState(defaultGraph);
   const [map, setMap] = useState<null | { [nodeId: string]: Ctrl }>(null);
+  const [ac, setAc] = useState<null | AudioContext>(null);
 
   const start = () => {
     const ac = new AudioContext();
     const map = createMap(ac, graph);
+    setAc(ac);
     setMap(map);
   };
 
@@ -192,6 +253,9 @@ export default () => {
             </ul>
           </li>
         ))}
+        <li>
+          <NewNodeInput {...{ map, graph, setGraph, ac: ac! }} />
+        </li>
       </ul>
       <Matrix {...{ map, graph, setGraph }} />
     </>

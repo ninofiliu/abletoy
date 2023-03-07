@@ -54,7 +54,7 @@ const createGainCtrl = (ac: AudioContext): Ctrl => {
   };
 };
 
-const createCtrl = (
+export const createCtrl = (
   ac: AudioContext,
   kind: "Context" | "Oscillator" | "Gain"
 ) =>
