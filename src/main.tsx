@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Nodes from "./Nodes.2";
+import App from "./App";
 import "./index.css";
 
 const ex = <T,>(x: T | null | undefined): T => {
@@ -10,6 +10,6 @@ const ex = <T,>(x: T | null | undefined): T => {
 
 ReactDOM.createRoot(ex(document.getElementById("root"))).render(
   <React.StrictMode>
-    <Nodes />
+    <App />
   </React.StrictMode>
 );

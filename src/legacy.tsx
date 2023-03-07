@@ -1,5 +1,97 @@
 import { useEffect, useState } from "react";
 
+const ObjectSelectInput = <T,>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (newValue: T) => any;
+  options: { [name: string]: T };
+}) => {
+  const stringValue = Object.entries(options).find(([k, v]) => v === value)![0];
+  return (
+    <select
+      value={stringValue}
+      onChange={(evt) => {
+        onChange(options[evt.target.value]!);
+      }}
+    >
+      {Object.keys(options).map((name) => (
+        <option key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+const OscillatorController = ({
+  osc,
+  nodes,
+}: {
+  osc: OscillatorNode;
+  nodes: OscillatorNode[];
+}) => {
+  const [type, setType] = useState<OscillatorNode["type"]>(osc.type);
+  const types = [
+    "custom",
+    "sawtooth",
+    "sine",
+    "square",
+    "triangle",
+  ] as OscillatorNode["type"][];
+  const [con, setCon] = useState<AudioDestinationNode>(osc.context.destination);
+  const conOptions: { [name: string]: AudioDestinationNode } = {
+    ac: osc.context.destination,
+    ...Object.fromEntries(nodes.map((node, i) => [i, node.frequency])),
+  };
+
+  return (
+    <div>
+      <TextSelectInput
+        value={type}
+        onChange={(newType) => {
+          osc.type = newType;
+          setType(newType);
+        }}
+        options={types}
+      />
+      <AudioParamController param={osc.frequency} />
+      <ObjectSelectInput
+        value={con}
+        onChange={(newCon) => {
+          console.log({ newCon });
+          osc.connect(newCon);
+          setCon(newCon);
+        }}
+        options={conOptions}
+      />
+    </div>
+  );
+};
+
+const ConnexionsController = ({
+  from,
+  graph,
+  value,
+  onChange,
+}: {
+  from: AudioNode | AudioParam;
+  graph: Graph;
+} & InputProps<Connexion>) => {
+  return <ul></ul>;
+};
+
+const GainController = ({ name, node }: { name: string; node: GainNode }) => {
+  return (
+    <div style={{ border: "1px solid white", margin: ".5em", padding: ".5em" }}>
+      <h1>{name}</h1>
+      <AudioParamController param={node.gain} />
+    </div>
+  );
+};
+
 type InputProps<T> = {
   value: T;
   onChange: (newValue: T) => any;
@@ -395,5 +487,110 @@ export default () => {
     <button onClick={start}>start</button>
   ) : (
     <GraphController ac={state.ac} />
+  );
+};
+import { useRef, useState } from "react";
+
+let used = false;
+const useOnce = (cb: () => any) => {
+  if (used) return;
+  used = true;
+  cb();
+};
+
+type Instrument = { kind: "kick" };
+
+const KickController = () => {
+  return <></>;
+};
+
+const InstrumentController = ({ instrument }: { instrument: Instrument }) => {
+  const Controller = { kick: KickController }[instrument.kind];
+  return <Controller />;
+};
+
+export default () => {
+  const [instruments, setInstruments] = useState<{
+    [name: string]: Instrument;
+  }>({});
+  const [newInstrumentName, setNewInstrumentName] = useState("");
+  const [sheet, setSheet] = useState<{
+    [name: string]: { instrumentName: string };
+  }>({});
+  const [newSheetName, setNewSheetName] = useState("");
+
+  useOnce(() => {
+    console.log("addig");
+    setInstruments({ myKick: { kind: "kick" } });
+  });
+
+  return (
+    <>
+      <h1>Instruments</h1>
+      <ul>
+        {Object.entries(instruments).map(([name, instrument]) => (
+          <li key={name}>
+            {name}
+            <button
+              onClick={() => {
+                delete instruments[name];
+                setInstruments({ ...instruments });
+              }}
+            >
+              x
+            </button>
+            <InstrumentController instrument={instrument} />
+          </li>
+        ))}
+      </ul>
+      <input
+        value={newInstrumentName}
+        onChange={(evt) => setNewInstrumentName(evt.target.value)}
+      />
+      <button
+        disabled={newInstrumentName in instruments}
+        onClick={() => {
+          setInstruments({
+            ...instruments,
+            [newInstrumentName]: { kind: "kick" },
+          });
+          setNewInstrumentName("");
+        }}
+      >
+        add instrument
+      </button>
+      <h1>Sheet</h1>
+      <ul>
+        {Object.entries(sheet).map(([name, { instrumentName }]) => (
+          <li key={name}>
+            {name}
+            <select value={instrumentName}>
+              {Object.keys(instruments).map((name) => (
+                <option>{name}</option>
+              ))}
+            </select>
+            {Array.from({ length: 16 }, (_, barI) => (
+              <input key={barI} type="checkbox" />
+            ))}
+          </li>
+        ))}
+      </ul>
+      {Object.keys(instruments).length > 0 && (
+        <>
+          <input
+            value={newSheetName}
+            onChange={(evt) => setNewSheetName(evt.target.value)}
+          />
+          <button
+            onClick={() => {
+              setSheet({ ...sheet });
+              setNewSheetName("");
+            }}
+          >
+            add sheet
+          </button>
+        </>
+      )}
+    </>
   );
 };
