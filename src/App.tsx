@@ -24,6 +24,48 @@ const defaultGraph: Graph = {
   ],
 };
 
+const MatrixInput = ({
+  graph,
+  setGraph,
+  map,
+  from,
+  to,
+  name,
+}: {
+  graph: Graph;
+  setGraph: Dispatch<SetStateAction<Graph>>;
+  map: { [nodeId: string]: Ctrl };
+  from: string;
+  to: string;
+  name: string;
+}) => {
+  const isCurrent = (edge: Graph["edges"][number]) =>
+    edge.from === from && edge.to === to && edge.name === name;
+  const connect = () => {
+    setGraph({
+      ...graph,
+      edges: [...graph.edges, { from, to, name }],
+    });
+    map[from].connect(map[to], name);
+  };
+  const disconnect = () => {
+    setGraph({
+      ...graph,
+      edges: graph.edges.filter(
+        (edge) => !(edge.from === from && edge.to === to && edge.name === name)
+      ),
+    });
+    map[from].disconnect(map[to], name);
+  };
+  return (
+    <input
+      type="checkbox"
+      checked={graph.edges.some(isCurrent)}
+      onChange={(evt) => (evt.target.checked ? connect() : disconnect())}
+    />
+  );
+};
+
 const Matrix = ({
   graph,
   setGraph,
@@ -57,35 +99,7 @@ const Matrix = ({
             <td>{from}</td>
             {tos.map(({ to, name }) => (
               <td key={`${to}.${name}`}>
-                <input
-                  type="checkbox"
-                  checked={graph.edges.some(
-                    (edge) =>
-                      edge.from === from && edge.to === to && edge.name === name
-                  )}
-                  onChange={(evt) => {
-                    if (evt.target.checked) {
-                      setGraph({
-                        ...graph,
-                        edges: [...graph.edges, { from, to, name }],
-                      });
-                      map[from].connect(map[to], name);
-                    } else {
-                      setGraph({
-                        ...graph,
-                        edges: graph.edges.filter(
-                          (edge) =>
-                            !(
-                              edge.from === from &&
-                              edge.to === to &&
-                              edge.name === name
-                            )
-                        ),
-                      });
-                      map[from].disconnect(map[to], name);
-                    }
-                  }}
-                />
+                <MatrixInput {...{ graph, setGraph, map, from, to, name }} />
               </td>
             ))}
           </tr>
