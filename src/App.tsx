@@ -132,7 +132,61 @@ export default () => {
                 .filter(([key]) => key !== "kind")
                 .map(([key, value]) => (
                   <li key={key}>
-                    {key}: {value}
+                    {key}:
+                    {node.kind === "Oscillator" && key === "frequency" && (
+                      <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={value}
+                        onChange={(evt) => {
+                          const x = +evt.target.value;
+                          map[nodeId].set(key, x);
+                          // @ts-ignore
+                          graph.nodes[nodeId][key] = x;
+                          setGraph({ ...graph });
+                        }}
+                      />
+                    )}
+                    {node.kind === "Gain" && key === "gain" && (
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step="any"
+                        value={value}
+                        onChange={(evt) => {
+                          const x = +evt.target.value;
+                          map[nodeId].set(key, x);
+                          // @ts-ignore
+                          graph.nodes[nodeId][key] = x;
+                          setGraph({ ...graph });
+                        }}
+                      />
+                    )}
+                    {node.kind === "Oscillator" && key === "type" && (
+                      <select
+                        value={value}
+                        onChange={(evt) => {
+                          const x = evt.target.value;
+                          map[nodeId].set(key, x);
+                          // @ts-ignore
+                          graph.nodes[nodeId][key] = x;
+                          setGraph({ ...graph });
+                        }}
+                      >
+                        {[
+                          "sine",
+                          "custom",
+                          "sawtooth",
+                          "square",
+                          "triangle",
+                        ].map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </select>
+                    )}
+                    {value}
                   </li>
                 ))}
             </ul>
