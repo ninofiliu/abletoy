@@ -34,23 +34,88 @@ export default () => {
     setMap(map);
   };
 
+  const froms = Object.keys(graph.nodes);
+  const tos = Object.entries(graph.nodes).flatMap(([to, node]) =>
+    ({
+      Oscillator: ["detune", "frequency"],
+      Gain: ["default"],
+      Context: ["default"],
+    }[node.kind].map((name) => ({ to, name })))
+  );
+
   return map ? (
-    <ul>
-      {Object.entries(graph.nodes).map(([nodeId, node]) => (
-        <li key={nodeId}>
-          ({node.kind}) {nodeId}
-          <ul>
-            {Object.entries(node)
-              .filter(([key]) => key !== "kind")
-              .map(([key, value]) => (
-                <li key={key}>
-                  {key}: {value}
-                </li>
+    <>
+      <p>nodes</p>
+      <ul>
+        {Object.entries(graph.nodes).map(([nodeId, node]) => (
+          <li key={nodeId}>
+            ({node.kind}) {nodeId}
+            <ul>
+              {Object.entries(node)
+                .filter(([key]) => key !== "kind")
+                .map(([key, value]) => (
+                  <li key={key}>
+                    {key}: {value}
+                  </li>
+                ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+      <p>edges</p>
+      <table>
+        <tbody>
+          <tr>
+            <td></td>
+            {tos.map(({ to, name }) => (
+              <td key={`${to}.${name}`}>
+                {to} {name}
+              </td>
+            ))}
+          </tr>
+          {froms.map((from) => (
+            <tr key={from}>
+              <td>{from}</td>
+              {tos.map(({ to, name }) => (
+                <td key={`${to}.${name}`}>
+                  <input
+                    type="checkbox"
+                    checked={graph.edges.some(
+                      (edge) =>
+                        edge.from === from &&
+                        edge.to === to &&
+                        edge.name === name
+                    )}
+                    onChange={(evt) => {
+                      if (evt.target.checked) {
+                        setGraph({
+                          ...graph,
+                          edges: [...graph.edges, { from, to, name }],
+                        });
+                        map[from].connect(map[to], name);
+                      } else {
+                        setGraph({
+                          ...graph,
+                          edges: graph.edges.filter(
+                            (edge) =>
+                              !(
+                                edge.from === from &&
+                                edge.to === to &&
+                                edge.name === name
+                              )
+                          ),
+                        });
+                        map[from].disconnect(map[to], name);
+                      }
+                    }}
+                  />
+                </td>
               ))}
-          </ul>
-        </li>
-      ))}
-    </ul>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   ) : (
     <button onClick={start}>start</button>
   );
