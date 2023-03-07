@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { createMap } from "./lib";
 import { Ctrl, Graph } from "./types";
 
@@ -24,6 +24,77 @@ const defaultGraph: Graph = {
   ],
 };
 
+const Matrix = ({
+  graph,
+  setGraph,
+  map,
+}: {
+  graph: Graph;
+  setGraph: Dispatch<SetStateAction<Graph>>;
+  map: { [nodeId: string]: Ctrl };
+}) => {
+  const froms = Object.keys(graph.nodes);
+  const tos = Object.entries(graph.nodes).flatMap(([to, node]) =>
+    ({
+      Oscillator: ["detune", "frequency"],
+      Gain: ["default"],
+      Context: ["default"],
+    }[node.kind].map((name) => ({ to, name })))
+  );
+  return (
+    <table>
+      <tbody>
+        <tr>
+          <td></td>
+          {tos.map(({ to, name }) => (
+            <td key={`${to}.${name}`}>
+              {to} {name}
+            </td>
+          ))}
+        </tr>
+        {froms.map((from) => (
+          <tr key={from}>
+            <td>{from}</td>
+            {tos.map(({ to, name }) => (
+              <td key={`${to}.${name}`}>
+                <input
+                  type="checkbox"
+                  checked={graph.edges.some(
+                    (edge) =>
+                      edge.from === from && edge.to === to && edge.name === name
+                  )}
+                  onChange={(evt) => {
+                    if (evt.target.checked) {
+                      setGraph({
+                        ...graph,
+                        edges: [...graph.edges, { from, to, name }],
+                      });
+                      map[from].connect(map[to], name);
+                    } else {
+                      setGraph({
+                        ...graph,
+                        edges: graph.edges.filter(
+                          (edge) =>
+                            !(
+                              edge.from === from &&
+                              edge.to === to &&
+                              edge.name === name
+                            )
+                        ),
+                      });
+                      map[from].disconnect(map[to], name);
+                    }
+                  }}
+                />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
 export default () => {
   const [graph, setGraph] = useState(defaultGraph);
   const [map, setMap] = useState<null | { [nodeId: string]: Ctrl }>(null);
@@ -34,18 +105,8 @@ export default () => {
     setMap(map);
   };
 
-  const froms = Object.keys(graph.nodes);
-  const tos = Object.entries(graph.nodes).flatMap(([to, node]) =>
-    ({
-      Oscillator: ["detune", "frequency"],
-      Gain: ["default"],
-      Context: ["default"],
-    }[node.kind].map((name) => ({ to, name })))
-  );
-
   return map ? (
     <>
-      <p>nodes</p>
       <ul>
         {Object.entries(graph.nodes).map(([nodeId, node]) => (
           <li key={nodeId}>
@@ -62,59 +123,7 @@ export default () => {
           </li>
         ))}
       </ul>
-      <p>edges</p>
-      <table>
-        <tbody>
-          <tr>
-            <td></td>
-            {tos.map(({ to, name }) => (
-              <td key={`${to}.${name}`}>
-                {to} {name}
-              </td>
-            ))}
-          </tr>
-          {froms.map((from) => (
-            <tr key={from}>
-              <td>{from}</td>
-              {tos.map(({ to, name }) => (
-                <td key={`${to}.${name}`}>
-                  <input
-                    type="checkbox"
-                    checked={graph.edges.some(
-                      (edge) =>
-                        edge.from === from &&
-                        edge.to === to &&
-                        edge.name === name
-                    )}
-                    onChange={(evt) => {
-                      if (evt.target.checked) {
-                        setGraph({
-                          ...graph,
-                          edges: [...graph.edges, { from, to, name }],
-                        });
-                        map[from].connect(map[to], name);
-                      } else {
-                        setGraph({
-                          ...graph,
-                          edges: graph.edges.filter(
-                            (edge) =>
-                              !(
-                                edge.from === from &&
-                                edge.to === to &&
-                                edge.name === name
-                              )
-                          ),
-                        });
-                        map[from].disconnect(map[to], name);
-                      }
-                    }}
-                  />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Matrix {...{ map, graph, setGraph }} />
     </>
   ) : (
     <button onClick={start}>start</button>
