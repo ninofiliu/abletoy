@@ -86,7 +86,7 @@ const Matrix = ({
   return (
     <table>
       <tbody>
-        <tr>
+        <tr style={{ writingMode: "sideways-lr", textAlign: "left" }}>
           <td></td>
           {tos.map(({ to, name }) => (
             <td key={`${to}.${name}`}>
@@ -94,16 +94,18 @@ const Matrix = ({
             </td>
           ))}
         </tr>
-        {froms.map((from) => (
-          <tr key={from}>
-            <td>{from}</td>
-            {tos.map(({ to, name }) => (
-              <td key={`${to}.${name}`}>
-                <MatrixInput {...{ graph, setGraph, map, from, to, name }} />
-              </td>
-            ))}
-          </tr>
-        ))}
+        {froms
+          .filter((from) => graph.nodes[from].kind !== "Context")
+          .map((from) => (
+            <tr key={from}>
+              <td>{from}</td>
+              {tos.map(({ to, name }) => (
+                <td key={`${to}.${name}`}>
+                  <MatrixInput {...{ graph, setGraph, map, from, to, name }} />
+                </td>
+              ))}
+            </tr>
+          ))}
       </tbody>
     </table>
   );
